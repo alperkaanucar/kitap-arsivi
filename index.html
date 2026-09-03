@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Kitap Arşivi</title>
+<link rel="manifest" href="./manifest.json" />
+<meta name="theme-color" content="#33473B" />
+<link rel="apple-touch-icon" href="./icon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Kitap Arşivi" />
+</head>
+<body>
+<style>
+  :root{
+    --paper:#F7F2E7;
+    --ink:#2B2620;
+    --ink-soft:#6B6255;
+    --cloth:#33473B;
+    --cloth-dark:#25342B;
+    --brass:#B08C55;
+    --line:#DCD2BE;
+    --danger:#8C3B2E;
+    --card:#FFFDF8;
+  }
+  *{box-sizing:border-box;}
+  .app{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    min-height:100vh;
+    max-width:560px;
+    margin:0 auto;
+    padding-bottom:100px;
+  }
+  .head{
+    position:sticky;
+    top:0;
+    background:var(--paper);
+    z-index:5;
+    padding:20px 18px 14px;
+    border-bottom:1px solid var(--line);
+  }
+  .head h1{
+    font-family:Georgia,"Iowan Old Style","Palatino Linotype",serif;
+    font-size:26px;
+    font-weight:700;
+    margin:0 0 2px;
+    color:var(--cloth-dark);
+    letter-spacing:0.2px;
+  }
+  .head .stats{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-bottom:14px;
+  }
+  .search-wrap{
+    position:relative;
+  }
+  .search-wrap input{
+    width:100%;
+    padding:11px 14px 11px 38px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:var(--card);
+    font-size:15px;
+    color:var(--ink);
+    outline:none;
+  }
+  .search-wrap input:focus{
+    border-color:var(--cloth);
+  }
+  .search-wrap svg{
+    position:absolute;
+    left:12px;
+    top:50%;
+    transform:translateY(-50%);
+    width:16px;
+    height:16px;
+    stroke:var(--ink-soft);
+    pointer-events:none;
+  }
+  .clear-btn{
+    position:absolute;
+    right:8px;
+    top:50%;
+    transform:translateY(-50%);
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    font-size:18px;
+    padding:6px;
+    cursor:pointer;
+    line-height:1;
+  }
+  .list{
+    padding:6px 14px 0;
+  }
+  .empty{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--ink-soft);
+    font-size:14px;
+  }
+  .author-row{
+    border-bottom:1px solid var(--line);
+  }
+  .author-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:14px 4px;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .chevron{
+    flex-shrink:0;
+    width:18px;
+    height:18px;
+    stroke:var(--brass);
+    transition:transform .18s ease;
+  }
+  .chevron.open{
+    transform:rotate(90deg);
+  }
+  .author-info{
+    flex:1;
+    min-width:0;
+  }
+  .author-name{
+    font-family:Georgia,"Iowan Old Style","Palatino Linotype",serif;
+    font-size:16.5px;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .author-count{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-top:1px;
+  }
+  .author-del{
+    flex-shrink:0;
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    padding:6px;
+    cursor:pointer;
+  }
+  .author-del:hover{ color:var(--danger); }
+  .books{
+    padding:0 4px 16px 32px;
+  }
+  .book-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 0;
+    border-bottom:1px dashed var(--line);
+    font-size:14.5px;
+  }
+  .book-row:last-of-type{
+    border-bottom:none;
+  }
+  .book-title{
+    flex:1;
+    line-height:1.4;
+  }
+  .book-title mark{
+    background:#F0D9A8;
+    color:var(--ink);
+    border-radius:2px;
+    padding:0 1px;
+  }
+  .book-del{
+    flex-shrink:0;
+    background:none;
+    border:none;
+    color:var(--ink-soft);
+    font-size:16px;
+    padding:4px 6px;
+    cursor:pointer;
+    line-height:1;
+  }
+  .book-del:hover{ color:var(--danger); }
+  .add-book-row{
+    display:flex;
+    gap:8px;
+    margin-top:10px;
+  }
+  .add-book-row input{
+    flex:1;
+    padding:9px 10px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    font-size:14px;
+    background:var(--card);
+    outline:none;
+  }
+  .add-book-row input:focus{ border-color:var(--cloth); }
+  .add-book-row button{
+    background:var(--cloth);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:0 14px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .fab{
+    position:fixed;
+    bottom:24px;
+    right:50%;
+    transform:translateX(280px);
+    width:56px;
+    height:56px;
+    border-radius:50%;
+    background:var(--cloth);
+    color:#fff;
+    border:none;
+    font-size:28px;
+    box-shadow:0 4px 14px rgba(37,52,43,0.35);
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:20;
+  }
+  @media (max-width:600px){
+    .fab{
+      right:20px;
+      transform:none;
+    }
+  }
+  .sheet-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(37,32,25,0.45);
+    z-index:30;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+  }
+  .sheet{
+    background:var(--paper);
+    width:100%;
+    max-width:560px;
+    border-radius:18px 18px 0 0;
+    padding:22px 20px 28px;
+    animation:slideup .18s ease;
+  }
+  @keyframes slideup{
+    from{transform:translateY(24px); opacity:0;}
+    to{transform:translateY(0); opacity:1;}
+  }
+  .sheet h2{
+    font-family:Georgia,"Iowan Old Style","Palatino Linotype",serif;
+    font-size:19px;
+    margin:0 0 16px;
+    color:var(--cloth-dark);
+  }
+  .sheet label{
+    display:block;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-bottom:5px;
+    margin-top:14px;
+  }
+  .sheet label:first-of-type{ margin-top:0; }
+  .sheet input{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:9px;
+    font-size:15px;
+    background:var(--card);
+    outline:none;
+  }
+  .sheet input:focus{ border-color:var(--cloth); }
+  .sheet-actions{
+    display:flex;
+    gap:10px;
+    margin-top:22px;
+  }
+  .sheet-actions button{
+    flex:1;
+    padding:12px;
+    border-radius:9px;
+    font-size:14.5px;
+    font-weight:600;
+    border:none;
+    cursor:pointer;
+  }
+  .btn-cancel{
+    background:var(--card);
+    color:var(--ink);
+    border:1px solid var(--line) !important;
+  }
+  .btn-save{
+    background:var(--cloth);
+    color:#fff;
+  }
+  .btn-save:disabled{
+    opacity:0.5;
+  }
+  .confirm-text{
+    font-size:14px;
+    color:var(--ink-soft);
+    line-height:1.5;
+  }
+  .toast{
+    position:fixed;
+    bottom:24px;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--cloth-dark);
+    color:#fff;
+    padding:10px 18px;
+    border-radius:20px;
+    font-size:13.5px;
+    z-index:50;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s ease;
+  }
+  .toast.show{
+    opacity:1;
+  }
+  .loading{
+    text-align:center;
+    padding:80px 20px;
+    color:var(--ink-soft);
+    font-size:14px;
+  }
+</style>
+
+<div id="root"></div>
+
+<script>
+const STORAGE_KEY = "kitap-arsivi-data";
+const SEED_DATA = [{"yazar": "ABDUL EZ ZÜMER", "kitaplar": ["Son Gece"]}, {"yazar": "ABDULAZİZ ÇAVUŞ", "kitaplar": ["Anglikan Kilisesine Cevap"]}, {"yazar": "ABDULBAKİ GÖLPINARLI", "kitaplar": ["Hz. Ali", "Nehcül Belağa", "İslam Tarihi Ve İslam'ın İlk Devri"]}, {"yazar": "ABDULHAMİD EL GİZZİ", "kitaplar": ["Eşhedü Emme Aliyyen Veliyullah"]}, {"yazar": "ABDULKADİR UDEH", "kitaplar": ["İslam Ve Yürürlükteki Kanunlar", "İslam Ve Beşeri Kanunlar", "İslam Ve Siyasi Durumumuz"]}, {"yazar": "ABDULKADİR ÇİHACI", "kitaplar": ["Kitap Ve Sünnet Işığında Muta Nikahı"]}, {"yazar": "ABDULKERİM SAFA", "kitaplar": ["İslam'da Cemaat"]}, {"yazar": "ABDULLAH ASLAN", "kitaplar": ["Neden Bu Kadar Fakirler"]}, {"yazar": "ABDULLAH AZZAM (DR.)", "kitaplar": ["Hamas", "Afgan Cihadında Rahmanın Ayetleri"]}, {"yazar": "ABDULLAH EL HADRAVİ", "kitaplar": ["Kabe Devrimi"]}, {"yazar": "ABDULLAH TURAN", "kitaplar": ["Ehli Beyt Fıkhında Cenaze Hükümleri"]}, {"yazar": "ABDURRAHMAN DİLİPAK", "kitaplar": ["Türkiye Nereye Gidiyor", "İnsanlığın Tarihi", "Menderes Dönemi", "Bir Başka Açıdan Kemalizm", "İnönü Dönemi", "Cumhuriyete Giden Yol", "Terörizm", "Terörist Kim", "Bu Din Benim Dinim Değil"]}, {"yazar": "ABDURRAHMAN EL MUJACİR", "kitaplar": ["İslamın Hareket Metodu"]}, {"yazar": "ABDURRAHMAN MEYDANİ", "kitaplar": ["Tarih Boyunca Yahudi Oyunları"]}, {"yazar": "ABDÜLHAMİD MUHACİRİ", "kitaplar": ["Bir Mücahidin Cihat Günlüğü"]}, {"yazar": "ABİDİN SÖNMEZ", "kitaplar": ["Şura Ve Rasulullah'ın (saa)Müşaveresi", "Rasulullah'ın (saa) Diplomatik Mümasebetleri"]}, {"yazar": "ACHMED SCHMİEDE", "kitaplar": ["İslam Lernen İslam Leben"]}, {"yazar": "ADEM APAK", "kitaplar": ["İslam Siyaset Geleneğinde Amr B. El As", "Hz. Osman Dönemi Devlet Siyaseti"]}, {"yazar": "ADEM MÜFTÜOĞLU", "kitaplar": ["Şeyda Diyorki ( Kitabul Akaid ==> Ehli Sünnete Göre)"]}, {"yazar": "ADEM TATLI ( MEHMET DUKMEN)", "kitaplar": ["Merak Ettiklerimiz"]}, {"yazar": "ADEM ÖZBAY _ FİKRET YETİŞENER", "kitaplar": ["Bilgisayar Rehberi"]}, {"yazar": "ADNAN ALİ EN - NAHVİ", "kitaplar": ["Filistin'e Biçilen Rol"]}, {"yazar": "ADNAN DEMİRCAN", "kitaplar": ["İslam Tarihinin İlk Asrında İktidar Mücadelesi", "Hz. Peygamber Devrinde Münafıklar", "Ali - Muaviye Kavgası"]}, {"yazar": "ADİL AKKOYUNLU", "kitaplar": ["Hz. Ali"]}, {"yazar": "ADİL BEBEK", "kitaplar": ["Maturide Günah Problemi"]}, {"yazar": "ADİL GÖKBURUN", "kitaplar": ["Şeytanca Protokoller"]}, {"yazar": "AFA YAYINLARI", "kitaplar": ["Yüzyılın 100 Politikacısı"]}, {"yazar": "AHMED AKBULUT", "kitaplar": ["Sahabe Dönemi İktidar Kavgası"]}, {"yazar": "AHMED AKGÜNDÜZ", "kitaplar": ["Bilinmeyen Osmanlı"]}, {"yazar": "AHMED AĞIRAKÇA", "kitaplar": ["Selahaddin Eyyubi Ve Kudüs'ün Yeniden Fethi", "Emeviler Döneminde Saltanata Karşı Hilafet Mücadeleleri Ve Kıyamlar"]}, {"yazar": "AHMED CEMİL AKINCI", "kitaplar": ["Rahmet Müjdecisi Hz. Muhammed (saa)in Hususiyetleri", "Cinler Alemi"]}, {"yazar": "AHMED DAVUTOĞLU", "kitaplar": ["Dini Tamir Davasında Din Tahripçileri"]}, {"yazar": "AHMED DEEDAT", "kitaplar": ["Kitabı Mukaddes Allah Sözümüdür"]}, {"yazar": "AHMED EL-KETTAN _ MUHAMMED EZ ZEYN", "kitaplar": ["Tağut"]}, {"yazar": "AHMED HİKMET EROĞLU", "kitaplar": ["Osmanlı Devrinde Yahudiler"]}, {"yazar": "AHMED LÜTFİ KAZANCI", "kitaplar": ["Nübüvvet Kavramı"]}, {"yazar": "AHMED SABRİ HAMEDANİ", "kitaplar": ["İslam'da Işıklı Yol Ehl-i Sünnet Yolu"]}, {"yazar": "AHMED VAROL", "kitaplar": ["Emperyalizm Oyunları"]}, {"yazar": "AHMED ÇELEBİ", "kitaplar": ["İslam Öncesi Mekke Ve Tarih Anlayışı"]}, {"yazar": "AHMED ÖZEL", "kitaplar": ["Hanefi Fıkıh Alimleri"]}, {"yazar": "AHMEDÊ BETÊ ( MELA )", "kitaplar": ["Kürtçe Mevlüt"]}, {"yazar": "AHMET ALMAZ", "kitaplar": ["Tevratın Türk Evlatları"]}, {"yazar": "AHMET CEVDET PAŞA", "kitaplar": ["Peygamber Ve Halifeler Tarihi (1., 2. Cilt)"]}, {"yazar": "AHMET FAİZ", "kitaplar": ["Fi Zilal İl Kur'an'da Davet Yolu 1., 2., ve 3. Cilt"]}, {"yazar": "AHMET GÜNBAY YILDIZ", "kitaplar": ["Gurbeti ben Yaşadım", "Aynada Batan Güneş", "Yanık Buğdaylar", "Boşluk", "Azat Kuşları", "Figan", "Sokağa Açılan Kapı"]}, {"yazar": "AHMET HÜR DOĞAN", "kitaplar": ["Çöldeki Kalem"]}, {"yazar": "AHMET KABAKLI", "kitaplar": ["Temellerin Duruşması"]}, {"yazar": "AHMET ZİYAÜDDİN GÜMÜŞHANEVİ", "kitaplar": ["Ehli Sünnet Akaidi"]}, {"yazar": "AHMET İZZÜDDİN EL- BEYANUNİ", "kitaplar": ["İctihad Ve Müctehit"]}, {"yazar": "AKİT YAYINLARI", "kitaplar": ["Osmanlılar Albümü (1., 2. Cilt )"]}, {"yazar": "ALAEDDİN YALÇINKAYA", "kitaplar": ["Celalettin Efganinin Gerçek Yüzü"]}, {"yazar": "ALAN R. TAYLOR", "kitaplar": ["İsrail'in Doğuşu"]}, {"yazar": "ALLAME ASKERİ", "kitaplar": ["Hadisi Kesave Hz. Muhammed (saa) Ve Soyuna Salavat Rivayetleri"]}, {"yazar": "ALPARSLAN TÜRKEŞ", "kitaplar": ["Dokuz Işık Ve Türkiye"]}, {"yazar": "ALPTEKİN DURSUNOĞLU", "kitaplar": ["Stratejik İttifak", "Suriye'de Vekalet Savaşı"]}, {"yazar": "ALTEMUR KILIÇ", "kitaplar": ["Titrek Pusula"]}, {"yazar": "ALİ ASKER RIZVANİ", "kitaplar": ["Kur'an Ve Sünnet Işığında Ehli Beyt Mektebi"]}, {"yazar": "ALİ BULAÇ", "kitaplar": ["Kuranı Kerimin Türkçe Anlamı", "Çağdaş Kavramlar Ve Düzenler"]}, {"yazar": "ALİ COŞKUN", "kitaplar": ["Mesihi Beklerken"]}, {"yazar": "ALİ KURANİ", "kitaplar": ["Zuhur Asrı"]}, {"yazar": "ALİ MUHAMMED NAKAVİ", "kitaplar": ["İslam Ve Milliyetçilik", "Emperyalizm", "Nasyonalizm Ve İslam"]}, {"yazar": "ALİ MURAT YEL", "kitaplar": ["Fatımanın Sırları"]}, {"yazar": "ALİ NAR", "kitaplar": ["Cemalettin Efganinin Gerçek Yüzü"]}, {"yazar": "ALİ NEKTAN", "kitaplar": ["Amerika'nın Uzay Sırları"]}, {"yazar": "ALİ OSMAN ATEŞ", "kitaplar": ["Ehli Sünnet Ve Şian'nın Delil Olarak Aldığı Bazı Hadisler", "Oryantalistlerin Hz. Peygamber(saa) İle İlgili İddialarına Cevaplar"]}, {"yazar": "ALİ RIZA RİCALİ", "kitaplar": ["Gaybi Haberler"]}, {"yazar": "ALİ RIZA SABIRİ", "kitaplar": ["1001 Hadis Işığında İmam Ali"]}, {"yazar": "ALİ TAŞDEMİR", "kitaplar": ["Hz. Ebul Fazlil Abbas'ın Hayatı Ve Faziletleri"]}, {"yazar": "ALİ UĞUR", "kitaplar": ["Görünmeyen Önderler"]}, {"yazar": "ALİ ÇİMEN _ HAKAN YILMAZ", "kitaplar": ["İpler Kimin Elinde", "Echelon", "İnsanoğlunun Uzay Macerası", "Tarih Değiştiren Olaylar", "Tarihi Değiştiren Gizli Savaşlar"]}, {"yazar": "ALİ ŞERİATİ", "kitaplar": ["Dine Karşı Din", "İslam Sosyolojisi", "Yarının Tarihine Bakış", "Ümmet ve İmamet", "Muhammed'i Tanıyalım", "Ne Yapmalı", "Ali Şiası Safevi Şiası", "Hacc", "Ebu Zerr", "Ali", "Marksizm Ve Diğer Batı Düşünceleri", "İnsanın Dört Zindanı", "Kendini Devrimci Yetiştirmek", "İnsan", "Mediniyet Ve Modernizm"]}, {"yazar": "AMOS PERLMUTTER", "kitaplar": ["İsrail'de Ordu Ve Politika"]}, {"yazar": "ARMEN VİCTORİAN", "kitaplar": ["Beyin Kontrolü"]}, {"yazar": "ARSLAN YAYINLARI", "kitaplar": ["Hasan El - Benna'nın Hayatı Ve Risaleleri"]}, {"yazar": "ARİF ARSLAN", "kitaplar": ["Kehanet"]}, {"yazar": "ARİF KÖTEN", "kitaplar": ["Ashab-ı Suffa"]}, {"yazar": "ASAF HÜSEYİN", "kitaplar": ["İslami Köktenciliğin Öyesi", "Orta Doğuda Devlet Ve Terör"]}, {"yazar": "ASSAD TAMİMİ", "kitaplar": ["İsrail'in Sonu"]}, {"yazar": "ATİLLA AKAR", "kitaplar": ["Suikastler", "Casuslar"]}, {"yazar": "AVNER LEVİ", "kitaplar": ["Türkiye Cumhuriyetinde Yahudiler"]}, {"yazar": "AVNİ İLHAN", "kitaplar": ["Mehdilik"]}, {"yazar": "AYAEN BAYLAK", "kitaplar": ["İmam Humeyni"]}, {"yazar": "AYDOĞAN VATANDAŞ", "kitaplar": ["Apokalipso", "Haarp", "Armagedon", "Agharta", "Kod Adı Kılıçbalığı"]}, {"yazar": "AYTUNÇ ALTINDAL", "kitaplar": ["Üç İsa", "Bilinmeyen Hitler", "Papa 16. Benedikt", "Gül Ve Haç Kardeşliği", "Vatikan Ve Tapınak Şövalyeleri"]}, {"yazar": "BAHATTİN SAĞLAM _ İSMAİL ACARKAN", "kitaplar": ["Turan Dursun Ve Din ( DinBu 1., 2., Ve 3. Cilde Cevap )"]}, {"yazar": "BAHAÜDDİN VAROL", "kitaplar": ["Ehli Beyt Gerçeği"]}, {"yazar": "BAKİ ADAM", "kitaplar": ["Yahudi Kaynaklarına Göre Tevrat"]}, {"yazar": "BAYRAM ALTAN", "kitaplar": ["Falcılık Ve Kehanet"]}, {"yazar": "BEDRUDDİN EZ ZERKEŞİ", "kitaplar": ["Hz. Aişe'nin Sahabeye Yönelttiği Eleştriler"]}, {"yazar": "BEHEŞTİ", "kitaplar": ["Namaz Nedir", "Kuran'da Mustazaf"]}, {"yazar": "BEKİR YAKIŞTIRAN", "kitaplar": ["Müslüman Halk Hareketleri"]}, {"yazar": "BEN DAN", "kitaplar": ["İsrailli Casus"]}, {"yazar": "BEŞİR İSLAMOĞLU", "kitaplar": ["İslami Hareketin Tarihi Seyri", "Sünnet Bilinci"]}, {"yazar": "BURHAN BOZGEYİK", "kitaplar": ["Meşhurların Son Anları", "Oniki İmam Ve Alevilik", "İslam Dünyasını Saran Ateş     Çemberi", "Meşhur Zalimler"]}, {"yazar": "BÜLENT BENGİSU", "kitaplar": ["Tapınak Şovalyeleri"]}, {"yazar": "BÜLENT ORAKOĞLU", "kitaplar": ["Ankara'da Gölge Oyunları", "İhanet Çemberi"]}, {"yazar": "CABİR RIZVANİ", "kitaplar": ["Hz. Azrail (as)"]}, {"yazar": "CAFER BENDİDERYA", "kitaplar": ["Ehli Beyte Göre Namaz Rehberi", "Caferi Şiileri Tanıyalım"]}, {"yazar": "CAFER SÜPHANİ ( ÜSTAD )", "kitaplar": ["Hz. Muhammed'in (saa ) Hauatı", "Siyasal İslam Vahhabilik"]}, {"yazar": "CAVİT ERSEN", "kitaplar": ["Hürriyet Mücadelesi", "Beyaz İhtilal"]}, {"yazar": "CEM ERSEVER", "kitaplar": ["Kürtler Pkk Ve Abdullah Öcalan", "Üçgendeki Tezgah"]}, {"yazar": "CEMAL ANADOL", "kitaplar": ["Ders Alalım"]}, {"yazar": "CEMAL AĞIRMAN", "kitaplar": ["Hz. Peygamber'in Sünnetinde İtaat"]}, {"yazar": "CEMAL CANPOLAT", "kitaplar": ["Osmanlı Belgelerinde Kızılbaşlar Hakkında İdam Ve Sürgün Fermanları"]}, {"yazar": "CEMAL KUTAY", "kitaplar": ["Tarih Herzaman İbrettir"]}, {"yazar": "CEMALADDİN KAPLAN", "kitaplar": ["İslam'da Taviz Vermenin Hükmü"]}, {"yazar": "CEMİL MERİÇ", "kitaplar": ["Işık Doğudan Gelir"]}, {"yazar": "CEVAD MUHADDİSİ", "kitaplar": ["Ümit Sabahı"]}, {"yazar": "CEVADİ AMULİ", "kitaplar": ["İbrahim Suresinin Tefsiri", "Kur'an'da Hidayet", "Celal Ve Cemal Aynasında Kadın"]}, {"yazar": "CEVAT EROĞLU", "kitaplar": ["İsrailin Bekaa Stratejisi Ve Kürtler"]}, {"yazar": "CİHAN AKTAŞ", "kitaplar": ["Şarkın Şiiri", "İran Sineması", "Devrim Ve Kadın"]}, {"yazar": "D. İZOLİ", "kitaplar": ["Ferhenk ( Kürtçe - Türkçe ) Sözlük"]}, {"yazar": "DARUT TAKRİB", "kitaplar": ["İmam Humeyni (Ra)"]}, {"yazar": "DAVİD E. WEİNGAST", "kitaplar": ["Komünizmin İç Yüzü"]}, {"yazar": "DER RAHI HAKK", "kitaplar": ["İslam'da Usulü Din ( Ehli Beyte Göre )"]}, {"yazar": "DESTGAYB ( AYETULLAH )", "kitaplar": ["Gizemli Öyküler", "Mead ( Ölümden Sonra Başlayan Hayat.)"]}, {"yazar": "DOĞAN AYDAL ( PROF. DR.)", "kitaplar": ["Maden Savaşları"]}, {"yazar": "DÜNYA EHLİ BEYT KURULTAYI", "kitaplar": ["Hz. Masume (da) Ve Kum Şehri"]}, {"yazar": "EBU HASAN EN NEDVİ", "kitaplar": ["Hz. Ali El Mürteza"]}, {"yazar": "EBUBEKİR KURBAN", "kitaplar": ["Bana Adı Adem Ana Adı Havva", "İsmet Saat Kaç"]}, {"yazar": "EBUBEKİR SİFİL", "kitaplar": ["Modern Fetvalar Çağdaş Hurafeler"]}, {"yazar": "EBUL FAZL İZZETİ", "kitaplar": ["İslamın Yayılış Tarihine Giriş"]}, {"yazar": "EKREM DOĞANAY", "kitaplar": ["Selef Mücadelesi"]}, {"yazar": "ELVAN ÖĞÜT _ GÜNDÜZ ÖĞÜT", "kitaplar": ["Kehanetler Ve Kahinler"]}, {"yazar": "EMRULLAH YÜKSEL", "kitaplar": ["Amidie Bilgi Teorisi"]}, {"yazar": "EMİN GÜRSES _ MAHİR KAYNAK", "kitaplar": ["Yeni Ortadoğu Haritası"]}, {"yazar": "EMİNE ŞENLİKOĞLU", "kitaplar": ["Ülkemi Arıyorum", "Gençliğin İmanını Sorularla Çaldılar"]}, {"yazar": "EMİNİ ( ALLAME )", "kitaplar": ["Gadi4-i Humm"]}, {"yazar": "ENBİYA YILDIRIM", "kitaplar": ["Hadis Problemleri", "Geleneksel Hadis Yorumculuğu"]}, {"yazar": "ENSAR KİRMANİ", "kitaplar": ["İmam En Büyük Önder"]}, {"yazar": "ERBİL TUŞALP", "kitaplar": ["Vatan Millet Sakarya Çete Parti Mafya"]}, {"yazar": "ERCÜMENT ÖZKAN", "kitaplar": ["Tasavvuf Üzerine ( İslami Hareket Üzerine )"]}, {"yazar": "ERDEBİLİ ( AYETULLAH UZMA )", "kitaplar": ["Tam İlmihal"]}, {"yazar": "ERGÜN POYRAZ", "kitaplar": ["Kanla Abdest Alanlar"]}, {"yazar": "ERİC NRAUER _ RAPHAEL PATAİ", "kitaplar": ["Kürdistanlı Yahudiler"]}, {"yazar": "ERİCH VON DÄNİKEN", "kitaplar": ["Tanrıparım Arabaları", "Taş Devri Bildiğiniz Gibi Değildi", "Yoksa Yanıldım mı?", "Tanrıların Stratejisi", "Yüce Tanrının İzinde", "Tanrıların Geldiği Gün", "Tanrıların Ayak İzleri"]}, {"yazar": "ESAD TEMİMİ", "kitaplar": ["İsrail'in Zevali"]}, {"yazar": "ETHEM RUHİ FIĞLALI", "kitaplar": ["İmam Ali ( as )"]}, {"yazar": "EŞREF EDİP", "kitaplar": ["Kara Kitap"]}, {"yazar": "EŞREF GÜNAYDIN", "kitaplar": ["Yahudi Kürtler ( Babilin Kayıp Çocukları.)"]}, {"yazar": "FARUK KÖSE", "kitaplar": ["Cahiliyenin Değişmeyen Yüzü"]}, {"yazar": "FATMANUR ALTYN", "kitaplar": ["Seyyid Kutup"]}, {"yazar": "FAWAZ GERGES", "kitaplar": ["Amerika Ve Siyasal İslam"]}, {"yazar": "FAZLULLAH KUMDANİ", "kitaplar": ["Hz. Ali (as) Kimdir"]}, {"yazar": "FEHMİ HUBEYDİ", "kitaplar": ["Aydınların Din Saptırması"]}, {"yazar": "FEHMİ ŞİNNAVİ", "kitaplar": ["Hilafet Modern Arap Dünyasının Eleştrisi"]}, {"yazar": "FETHİ YEKEN", "kitaplar": ["Müslüman Olmam Neyi Gerektirir", "İslami Hareketin Problemleri"]}, {"yazar": "FEZA K. YALÇIN", "kitaplar": ["Hangi Lider Daha Zengin", "Kim Nerden Nasıl Buldu"]}, {"yazar": "FİDAN GÜNGÖR", "kitaplar": ["Teoriden Partiye İslami Harekat"]}, {"yazar": "G. HÜSEYİN TACİRİNESEP", "kitaplar": ["Kurtarıcı"]}, {"yazar": "GEORGES POLİTZER", "kitaplar": ["Felsefenin Temel İlkeleri"]}, {"yazar": "GRACE HALLSELL", "kitaplar": ["Tanrıyı Kıyamete Zorlamak"]}, {"yazar": "GÖKHAN EVLİYAOĞLU", "kitaplar": ["Türk İktisat Tarihi"]}, {"yazar": "GÖKÇE ÇATLI", "kitaplar": ["Babam Çatlı"]}, {"yazar": "GÜLTEKİN AVCI", "kitaplar": ["İstihbarat Oyunları"]}, {"yazar": "GÜRKAN BİÇEN", "kitaplar": ["Velayeti Fakih"]}, {"yazar": "HABİB SUADİYE", "kitaplar": ["Kirli Savaş"]}, {"yazar": "HAKAN YILMAZ CEBİ", "kitaplar": ["Gizlenen Talmit Yasaları", "İsrail'in Şifresi"]}, {"yazar": "HALUK NURBAKİ (DR )", "kitaplar": ["İlmi Gerçekler ( Kuranı Kerimden Ayetlerle. )", "Kur'an'ı Kerimden Ayetler Ve İlmi Gerçekler 3. Cildi"]}, {"yazar": "HALİFE ALTAY", "kitaplar": ["Anayurttan Anadolu'ya"]}, {"yazar": "HALİL CİBRAN", "kitaplar": ["Kırık Kanatlar"]}, {"yazar": "HAMİDULLAH, JOLİBET, BERQUE, NABİTLEN, RASHED", "kitaplar": ["İslam Bilim Ve Felsefe"]}, {"yazar": "HARUN YAHYA", "kitaplar": ["Kavimlerin Helakı", "Evrim Teorisinin Çöküşü", "Terörün Perde Arkası", "Darvinizm", "yahudilik Ve masonluk", "Aids Kuran'da Geçen Dabbetül Arz mı?"]}, {"yazar": "HASAN AKAY (PROF. DR.)", "kitaplar": ["İslami Terimler Sözlüğü"]}, {"yazar": "HASAN AKSAY", "kitaplar": ["Gerici Eylemler Ve Başörtüsü"]}, {"yazar": "HASAN ALAKESE", "kitaplar": ["Sultanların Şeyhleri"]}, {"yazar": "HASAN ALİMİ BEKTAŞ", "kitaplar": ["Kur'an İle İstihare Allah'ın ( CC ) Gözlemci Gözleri"]}, {"yazar": "HASAN B. ALİ EL - HARRANİ", "kitaplar": ["Tuheful Ukül"]}, {"yazar": "HASAN BASRİ ERZURUMİ", "kitaplar": ["Kur'an'ı Kerime Göre Sağcılık Ve Solculuğun Manası Ve Solcu Yazarlara Cevap"]}, {"yazar": "HASAN EL BENNA", "kitaplar": ["Davanın Esasları", "Problemlerimiz", "Gençlik İman Ve Cihat", "İslami Hareket"]}, {"yazar": "HASAN GÜMÜŞOĞLU", "kitaplar": ["İslam'da İmamet Ve Hilafet"]}, {"yazar": "HASAN TAŞKIN", "kitaplar": ["İsrail'in GAP Senaryosu", "İsrail", "Hamas", "Hizbullah Kıskacında Türkiye"]}, {"yazar": "HASAN ŞAFAK", "kitaplar": ["İsrail'in İmparatorluk Planları ( 3. Sünya Savaşı.)"]}, {"yazar": "HAYRETTİN KARAMAN", "kitaplar": ["Laik Düzende Dini Yaşamak ( 1.,2.,3., Cilt )"]}, {"yazar": "HEKİMOĞLU İSMAİL", "kitaplar": ["Minyeli Abdullah"]}, {"yazar": "HENRY MUNSON JR.", "kitaplar": ["Ortadoğuda İslam Ve Devrim"]}, {"yazar": "HUMEYNİ İMAM ( AYETULLAH UZMA )", "kitaplar": ["Mektuplar Mesajlar", "Kudüs Ve Filistin Meselesi", "Sözleriyle Hattı İmam 1.cilt", "İslam'da Devlet", "Tam İlmihal", "Nefis Tezkiyesi", "Sırrı Salât", "Pir-i Aşk", "Kadının Konumu", "Kırk Hadis Şerhi", "İslam İnkılabının İhracı", "Hidayet  Meşalesi. ( Misbahul Hidaye.)", "Akıl Ve Cehalet Askerleri ( Hadis Şerhi )", "Masumların Çejresi", "Hamd Süresi Tefsiri", "Cihadı Ekber", "Seher Duası Şerhi", "Namazın Adabı", "Son Mesaj", "Kısa Sözler Hikmet Ve Vecizeler", "İslam Fıkhımda Devlet", "Sözleriyle Hattı İmam 1. Cilt"]}, {"yazar": "HÜRRİYET VAROL", "kitaplar": ["Kur'an Ve Ehli Beyt Kaynaklı Dualar"]}, {"yazar": "HÜSEYİN HATEMİ ( PROF. DR. )", "kitaplar": ["Kadının Çıkış Yolu", "Hukuk Devleti Öğretisi", "İslam Hukuku Dersleri", "İnsan Hakları Öğretisi", "İslam Açısından Sosyalizm"]}, {"yazar": "HÜSEYİN KARATAY", "kitaplar": ["Sürgün Öğretmen"]}, {"yazar": "HÜSEYİN MEZAHİRİ ( AYETULLAH )", "kitaplar": ["İslam'da Aile"]}, {"yazar": "HÜSEYİN VAHİD HORASANİ ( AYETULLAH )", "kitaplar": ["Usulü Din İle Tanışmak"]}, {"yazar": "HÜSEYİN YILMAZ", "kitaplar": ["Ayasofya"]}, {"yazar": "HÜSNİYE", "kitaplar": ["İslam Tarihinde Alevi - Sünni Tartışması ( Ant Yayınları )"]}, {"yazar": "HİDAYET KOŞARCA", "kitaplar": ["Yeryüzü Efendileri", "Hadislerle Namaz"]}, {"yazar": "HİKMET NEŞRİYAT", "kitaplar": ["Seyyid Kutup Külliyatı ( İman Gerçeği )", "Seyyid Kutup Gözüyle Amerika"]}, {"yazar": "HİKMET TANYU", "kitaplar": ["İslam Dininin Düşmanları Ve Allah'a İnananlar", "Tarih Boyunca yahudiler Ve Türkler 2. Cildi", "Nuh'un (as) Gemisi ve Ermeniler"]}, {"yazar": "HİTLER", "kitaplar": ["Kavgam"]}, {"yazar": "HİZBULLAH HAKVERDİ", "kitaplar": ["Aşura Kıyamının İmam Humeynideki Tecellileri"]}, {"yazar": "J. H. BRENNAN", "kitaplar": ["Nostradamus"]}, {"yazar": "JACKUES AUSTRUY ( PROF.)", "kitaplar": ["Kapitalizm", "Marksizm Ve İslam"]}, {"yazar": "JOHN PİLGER", "kitaplar": ["Dünyanın Yeni Efendileri"]}, {"yazar": "JONATHAN BLOW _ PAUL TODD", "kitaplar": ["Küresel İstihbarat"]}, {"yazar": "JOSE MARİA VE ARSENAL CARO Y. ROGRİİGİEZ", "kitaplar": ["Tarih Boyunca Masonluk"]}, {"yazar": "KADİR MISIROĞLU", "kitaplar": ["Hicret", "Macar İhtilali"]}, {"yazar": "KAŞİFUL GITA ( AYETULLAH)", "kitaplar": ["Caferi Mezhebi Ve Esasları"]}, {"yazar": "KELİM SIDDIKİ", "kitaplar": ["İran İslam Devrimi"]}, {"yazar": "KEMAL SEYYİD", "kitaplar": ["Gelin Böyle Namaz Kılalım"]}, {"yazar": "KENAN HULUSİ", "kitaplar": ["Beşer Dakikalık Hikayeler"]}, {"yazar": "KENAN SARIALİOĞLU", "kitaplar": ["Hz. Ali'nin Selamı Var. ( Hz. Ali Divanindan Seçmeler.)"]}, {"yazar": "KENNETH R. TİMMERMAN", "kitaplar": ["Ölûm Lobisi. ( Batı Irak'ı Nasıl Silahlandırdı.)"]}, {"yazar": "KEVSER YAYINLARI", "kitaplar": ["İran İslam İnkılabı", "Hidayet Önderleri. ( 1., 2., 3., 4., 5., 6., 7., 8., 9., 10. Cilt.)", "Usûlü Din"]}, {"yazar": "KUM YAYINLARI", "kitaplar": ["Kur'an' ı Kerim Ve Türkçe Meali"]}, {"yazar": "KURAN ARAŞTIRMALARI GRUBU", "kitaplar": ["Kur'an Hiç Tükenmeyen Mucize"]}, {"yazar": "KUTSAL KİTAP", "kitaplar": ["Eski ve Yeni Ahit. ( Tebra, Zebur Ve İncil.)"]}, {"yazar": "LENİN", "kitaplar": ["Emperyalizm Kapitalizmin En Yüksek Aşaması"]}, {"yazar": "LOUİS MARSCHALKO", "kitaplar": ["Yahudi"]}, {"yazar": "M. ALİ BALTAŞI", "kitaplar": ["İlk Mesajlar"]}, {"yazar": "M. HASAN NECEFİ", "kitaplar": ["Ölümle Başlayan Yolculuk"]}, {"yazar": "M. HASANEYN HEYKEL", "kitaplar": ["Öfkenin Sonbaharı ( Bir Firavun'un Sonu )"]}, {"yazar": "MAHMUT BABİLLİ", "kitaplar": ["İslam'da Şura"]}, {"yazar": "MAHMUT ESAD COŞAN (PROF. DR.)", "kitaplar": ["İslam Çağrısı"]}, {"yazar": "MAHİR KAYNAK", "kitaplar": ["Komplo Yok", "Dünyayı Kimler Yönetiyor", "Derin Pkk ( Ömer Lütfü Mete İle)", "Yeni Ortadoğu Projesi. ( Emin Gürses İle)", "Para İmparatorluğu"]}, {"yazar": "MALİK BİN NEBİ", "kitaplar": ["Çağa Tanıklığım"]}, {"yazar": "MARCUS CHOWN", "kitaplar": ["Evren"]}, {"yazar": "MAURİCE BUCAİLLE", "kitaplar": ["Müsbet İlim Yönünden Tevrat", "İnciller Ve Kur'an"]}, {"yazar": "MAZHARUDDİN SIDDIKİ", "kitaplar": ["İslam Ve Marksizm"]}, {"yazar": "MEHDİ AKSU", "kitaplar": ["İslam'da Evlilik Ve Cinsel Sorunlar"]}, {"yazar": "MEHDİ PİŞAVİ", "kitaplar": ["Cahiliye Döneminden Hz. Peygamber'in (saa) Vegatına Kadar İslam Tarihi"]}, {"yazar": "MEHDİ SAİDİ", "kitaplar": ["Kur'an İle İstihare", "Allahın Gözlemci Gözü"]}, {"yazar": "MEHMED DADUER", "kitaplar": ["14 Masumu Tanıyalım"]}, {"yazar": "MEHMET AKİF ERSOY", "kitaplar": ["Safahat"]}, {"yazar": "MEHMET ALAGAŞ", "kitaplar": ["İşaret Yazıları", "Aynalar Ve İnsanlar", "Dünden Bugüne Şeytan Ve Dostları", "Şeytanizme Rağmen İslami Uyanış"]}, {"yazar": "MEHMET ALİ BÜYÜKKARA ( PROF. DR.)", "kitaplar": ["İmamet Mücadelesi Ve Haşimoğulları"]}, {"yazar": "MEHMET ALİ KAPAR", "kitaplar": ["İslamın İlk Döneminde Beyat Ve Seçim Yöntemi"]}, {"yazar": "MEHMET DOĞAN", "kitaplar": ["Dil", "Kültür Ve Yabancılaşma", "Kur'an Gölgesinde Ve Tarih Önünde Türk"]}, {"yazar": "MEHMET EMİN GÖKTAŞ", "kitaplar": ["Türkiyede Dini Hayat"]}, {"yazar": "MEHMET FARUK GÜRTUNCA", "kitaplar": ["Seyyid Battal Gazi"]}, {"yazar": "MEHMET HAYRİ KIRBAŞOĞLU", "kitaplar": ["Namazların Birleştirilmesi", "İslam Düşüncesinde Hadis Metodolojisi"]}, {"yazar": "MEHMET MAHFUZ SÖYLEMEZ ( PROF. DR )", "kitaplar": ["İdeolojik Tarih Okumaları"]}, {"yazar": "MEHMET METİN HÜLAGU (PROF. DR )", "kitaplar": ["Sultan 2. Abdulhamidin Sürgün Günleri"]}, {"yazar": "MEHMET SÜMBÜL", "kitaplar": ["Milliyetçimiyiz Müslümanmıyız", "İslam Adına Particilik"]}, {"yazar": "MEHMET TUNCEL", "kitaplar": ["Hedef Neden İran"]}, {"yazar": "MENZİL YAYINEVİ", "kitaplar": ["Adabı Fethullah"]}, {"yazar": "MERAL MARUF", "kitaplar": ["Dullar Kampı"]}, {"yazar": "MERYEM CEMİLE", "kitaplar": ["Batı Uygarlığı Ve*nsan", "Garb Materyalizmi Karşısında İslam. ( 2. Cilt )", "İslam Ve Oryantalizm", "Kendini Mahkum Eden Batı", "İslam Ve Çağdaş Öncüleri", "Mektuplaşmalar", "Kendini Mahkum Eden Vahşi Batı 1. Kitap", "Batı Uygarlığı Ve İnsan"]}, {"yazar": "METİN ATAM", "kitaplar": ["Hüseyin'in Kanı"]}, {"yazar": "METİN KÖSE", "kitaplar": ["Yeni Nesil Yeni Toplum"]}, {"yazar": "MEVDUDİ", "kitaplar": ["Tefhimul Kur'an (1-8 Cilt)", "Kur'an'a Göre 4 Terim", "Hilafet Ve Saltanat", "Sünnetin Anayasal Niteliği", "İslam'a İlk Adım", "İslamın Çağrısı", "Yeniden Diriliş Yolunda Engeller", "Önerile", "İslam Nizamı", "Hitabeler", "Tefhimul Kur'an ( 1.-9. Cilt)", "İslam Medeniyeti", "Gelin Bu Dünyayı Değiştirelim", "İslam Vahdeti Irkçılık", "İslam İnkılabının Yolu"]}, {"yazar": "MEVLANA MUHAMMED FADLURRESUL", "kitaplar": ["Vesikalarla Vahhabiliğin İçyüzü"]}, {"yazar": "MEVLÜT GÜNGÖR", "kitaplar": ["Kur'an'ı Kerim'in Hz. Peygamber'in (saa) Sünnetine Verdiği Değer"]}, {"yazar": "MUAMMER KADDAFİ", "kitaplar": ["Ueşil Kitap"]}, {"yazar": "MUHAMMED ALİ", "kitaplar": ["14 Masumdan 40 Hadis"]}, {"yazar": "MUHAMMED ALİ HATUN", "kitaplar": ["Ebu Yasir (Seyyid Abbas Müsavi )"]}, {"yazar": "MUHAMMED ALİ KUTUP", "kitaplar": ["Barnaba İncili"]}, {"yazar": "MUHAMMED AMİR ŞEBRAİ", "kitaplar": ["Peygamberimizin Torunları ( Ehli Sünnet İnancına Göre 12 İmam.)"]}, {"yazar": "MUHAMMED AVVAME", "kitaplar": ["İmamların Fıkhi İçtihadında Hadislerin Rolü"]}, {"yazar": "MUHAMMED B. RESUL AL HÜSEYNİ", "kitaplar": ["Kıyamet Alametleri"]}, {"yazar": "MUHAMMED B. YAKUB EL- FİRUZABADİ", "kitaplar": ["İbadetleriyle Peygamberimiz"]}, {"yazar": "MUHAMMED BAKIR ES - SADIR", "kitaplar": ["Kur'an Okulu"]}, {"yazar": "MUHAMMED BİN ABDULLAVAHAP", "kitaplar": ["Keşful Şubuhat ( Şüpheli Şeyleri Açıklama )"]}, {"yazar": "MUHAMMED CEVAD HORASANİ ( AYETULLAH)", "kitaplar": ["Alametleriyle Birlikte Beklenen Mehdi (as)"]}, {"yazar": "MUHAMMED EBU ZEHRA", "kitaplar": ["Mezhepler Tarihi", "İslam'a Davet. (Gereklilik Ve Yöntem Üzerine)", "İslam'da Savaş Kavramı"]}, {"yazar": "MUHAMMED EL - BEHİY", "kitaplar": ["İslam Düşüncesinin İlahi Yönü", "İslami Direniş Ve Islahat"]}, {"yazar": "MUHAMMED EL-FAZIL İBNİ ASUR", "kitaplar": ["Ana Hatlarıyla Tefsir Tarihi"]}, {"yazar": "MUHAMMED ES-SEYYİD HÜSEYİN EZ- ZEHEBİ", "kitaplar": ["Tefsir Ve Hadiste İsrailiyat"]}, {"yazar": "MUHAMMED ESEN", "kitaplar": ["Ehli Sünnet Kavramının Oluşum Ve Gelişim Süreci"]}, {"yazar": "MUHAMMED FAZIL LENKARANİ ( AYETULLAH UZMA)", "kitaplar": ["Genç İlmihal Ve Caferi Mezhebinin Esasları"]}, {"yazar": "MUHAMMED GAZALİ", "kitaplar": ["Müslümanın Ahlakı"]}, {"yazar": "MUHAMMED HAKİM", "kitaplar": ["Tağitlar Tuğyan Edince"]}, {"yazar": "MUHAMMED HATEMİ", "kitaplar": ["Dalga Korkusu"]}, {"yazar": "MUHAMMED HÜSEYİN F. ZADE", "kitaplar": ["Ehli Beyt Mektebine Göre Hacc Rehberi"]}, {"yazar": "MUHAMMED HÜSEYİN FADLULLAH", "kitaplar": ["Kuram Ve Eylem"]}, {"yazar": "MUHAMMED KUTUB", "kitaplar": ["Çağdaş Fikir Akımları 1 Demokrasi", "Tevhid", "İslamın Etrafındaki Şüpheler"]}, {"yazar": "MUHAMMED MEHDİ ASIFİ", "kitaplar": ["Hizbullah İsrail Savaşı"]}, {"yazar": "MUHAMMED MESCİDİ CAMİ", "kitaplar": ["Ehli Sünnet Ve Şiada Siyasi Düşüncenin Temelleri"]}, {"yazar": "MUHAMMED MORO", "kitaplar": ["Hamas Ve İslami Cihad"]}, {"yazar": "MUHAMMED MUSAVİ (SEYYİD)", "kitaplar": ["Peşaver Geceleri"]}, {"yazar": "MUHAMMED PEZDEVİ ( EBUL YUSR )", "kitaplar": ["Ehli Sünnet Akaidi"]}, {"yazar": "MUHAMMED REŞAD", "kitaplar": ["Cemalattin Efganinin Gerçek Yüzü"]}, {"yazar": "MUHAMMED RIZA MUZAFFER", "kitaplar": ["Şia İnançları"]}, {"yazar": "MUHAMMED SADIK NECMİ", "kitaplar": ["Hicretten Şehadete Sözleriyle İmam Hüseyin"]}, {"yazar": "MUHAMMED SADIK UL SADİ", "kitaplar": ["Hz. Abdulkadir Heylanimin Menkıbeleri (Gaybın Dili)"]}, {"yazar": "MUHAMMED TAKİ CAFERİ", "kitaplar": ["İnsan Ve Yakarış"]}, {"yazar": "MUHAMMED TAKİ REHBER", "kitaplar": ["Sahifei Seccadiyede Siyaset Ve Toplum"]}, {"yazar": "MUHAMMED TİCANİ", "kitaplar": ["Nasıl Hidayete Kavuştum", "Doğrularla Birlikte", "Zikir Ehline Sorun", "Gerçek Sünnet Ehli Siadır", "Doğruya Doğru", "Kur'an'daki Sünnet Ehli Beyte Gönül Verenlerin Yoludur"]}, {"yazar": "MUHAMMED VAİZZADEİ HORASANİ", "kitaplar": ["Vahşete Çağrı"]}, {"yazar": "MUHAMMED ŞEDİD", "kitaplar": ["Rasulullah'ın (as) Davet Ve Cihadı"]}, {"yazar": "MUHSİN KIRAATİ", "kitaplar": ["Zikir Ve Dualarıyla Namazın Gerçeği", "Namazın Hikmeti", "Namazda 114 Hikmet"]}, {"yazar": "MUHİT MERT", "kitaplar": ["Kelam Tarihinin Problemleri"]}, {"yazar": "MURTAZA ASKERİ ( ALLAME )", "kitaplar": ["Ehli Beyt Ve Ehli Sünnet Ekolleri 1., 2., Ve 3. Cilt)", "Abdullah Bin Sebe Masalı", "Cemel Savaşı"]}, {"yazar": "MUSA CARULLAH BİGİYEF", "kitaplar": ["Kitabus Sünne"]}, {"yazar": "MUSTAFA ALLAHYARİ", "kitaplar": ["Direnişin Dili Bilinmeyen Yönleriyle Seyyid Hasan Nasrullah"]}, {"yazar": "MUSTAFA ARMAĞAN", "kitaplar": ["Abdulhamidin Kurtlarla Dansı", "Avrupa'nın 50 Büyük Yalanı", "Küller Altında Yakın Tarih"]}, {"yazar": "MUSTAFA ASIM KÖKSAL", "kitaplar": ["Hz. Hüseyin Ve Kerbela Faciası"]}, {"yazar": "MUSTAFA AYDIN", "kitaplar": ["Kod Adı Kılıçbalığı"]}, {"yazar": "MUSTAFA BIYIK", "kitaplar": ["Moonculuk"]}, {"yazar": "MUSTAFA HALİD-İ ÖMER FERRUH", "kitaplar": ["Misyonerler Ve Tarihçeleri"]}, {"yazar": "MUSTAFA MEŞHUR", "kitaplar": ["Tek Yol Cihad", "Hak Yolda Yürürken ( Davet İçin Yol Azığı)"]}, {"yazar": "MUSTAFA MÜFTÜOĞLU", "kitaplar": ["Mühim Olaylar", "İlayı Kelimetullah Uğruna", "Her Yönüyle Sultan 2. Abdülhamit", "Yalan Söyleyen Tarih Utansın. 1.- 9. Cilt)"]}, {"yazar": "MUSTAFA NECATİ BURSALI", "kitaplar": ["Hz. Yusuf(as) Ve Züleyha"]}, {"yazar": "MUSTAFA SEZER", "kitaplar": ["Yönetenler Ve Peygamberler"]}, {"yazar": "MUSTAFA SIBAİ", "kitaplar": ["İslam Hukukunda Sünnet"]}, {"yazar": "MUSTAFA ÇELİK", "kitaplar": ["Darül Harp Fıkhı"]}, {"yazar": "MUSTAFA ÖZKAN", "kitaplar": ["Emeviler Döneminde İktidar Ulema İlişkisi"]}, {"yazar": "MUSTAFA İSLAMOĞLU", "kitaplar": ["İmamlar Ve Sultanlar", "İman", "Gaza Harekatı", "Üç Muhammed İki Tasavvur Bir Gerçek", "İslami Diriliş Hareketlari", "Savaş Kesmeyen Sözler", "Yokluğumda Düşülmüş Notlar", "İttihadı Muhammedi Harekatı", "Efendim", "Yürek Devleti"]}, {"yazar": "MUTAHHARİ ( AYETULLAH )", "kitaplar": ["Hicap", "Hafızda İrfan", "İslam Cumhuriyeti Üzerine", "Adl-i İlahi", "İmamet Ve Rehberiuet", "Vahiy Ve Nübüvvet", "Fıtrat Üzerine", "Hatemiyyet", "Vela Ve Velayet Üzerine", "Felsefe Dersleri 1. Cilt", "İslam Ve Değişim", "İslam İlimleriyle Tanışma 1. Cilt", "İslam Devrimi", "İnsanı Kamil", "Kur'an'da İnsaniyet Mektebi", "Gaybi Yardımlar", "Kur'anda İnsan", "İman Ve Ahiret", "Fıtrat", "İslam'da Kadın Hakları", "Altı Makale", "İmam Hüseyin Ve Kerbela (1., 2. Ve 3. Cilt.)", "Habeşistan Muhacirleri", "Tarih Ve Toplum", "İslami Dünya Görüşü Kur'an", "İnsan", "İman Ve Ahiret", "Şehit ( Seyyit Kutup İle)"]}, {"yazar": "MİCHAEL BAİGENT _ RİCHART LEİGHT", "kitaplar": ["Gizli Almanya"]}, {"yazar": "MİCHAEL DROSNİN", "kitaplar": ["Tevratın Şifresi"]}, {"yazar": "MİKAİL BAYRAM", "kitaplar": ["Tarihin Işığında Nasrettin Hoca Ve Ahi Evren"]}, {"yazar": "MİLES COPELAND", "kitaplar": ["Devletler Oyunu"]}, {"yazar": "N. M. SHAİKH", "kitaplar": ["İslam Toplumunda Kadın"]}, {"yazar": "NADİR (DR)", "kitaplar": ["Hayber Fatihi Haydar"]}, {"yazar": "NADİRE MATER", "kitaplar": ["Mehmedin Kitabı"]}, {"yazar": "NASURİDDİN ELBANİ", "kitaplar": ["Evlenme Adabı"]}, {"yazar": "NAZIM HİKMET", "kitaplar": ["Kan Konuşmaz"]}, {"yazar": "NAZIM TEKTAŞ", "kitaplar": ["Gün Görmeyen Şehzadeler"]}, {"yazar": "NAZIR ÖZSÜZ", "kitaplar": ["Yanlış Yönetilen Ülke Türkiye"]}, {"yazar": "NAİM KASIM", "kitaplar": ["Hizbullah ( Bir Hareketin Anlatılmamış Öyküsü.)"]}, {"yazar": "NECATİ KARA (DR.)", "kitaplar": ["Kur'an'a Göre Hz. Musa (as)", "Firavun Ve Yahudiler"]}, {"yazar": "NECATİ KUTLU", "kitaplar": ["Big Bang Teorisi Ve Evrenin Yaratılışı"]}, {"yazar": "NECMEDDİN ERBAKAN (PROF. DR.)", "kitaplar": ["Kenan Evrenin Anılarındaki Yanılgılar"]}, {"yazar": "NECİP FAZIL KISAKÜREK", "kitaplar": ["Müdafalarım"]}, {"yazar": "NECİP HEYLANİ (DR.)", "kitaplar": ["Uhuttan Kalan Hatıra"]}, {"yazar": "NEHİR YAYINLARI", "kitaplar": ["Malcolm X Konuşuyor"]}, {"yazar": "NEVZAT YÜKSEL", "kitaplar": ["Konularına Göre Kur'an'ı Kerim Fihristi"]}, {"yazar": "NEVİN ABDULHALİK MUSTAFA", "kitaplar": ["İslam Düşüncesinde Muhalefet"]}, {"yazar": "NOAM CHOMSKY", "kitaplar": ["Terörizm Kültürü", "Korsanlar Ve İmparatorlar", "Yeni Askeri Hümanizm"]}, {"yazar": "NORMAN G. FİNKELSTEİN", "kitaplar": ["Soykırım Endüstrisi Yahudi Acılarının İstismarı"]}, {"yazar": "NORTON MENZVİNSKY", "kitaplar": ["İsrail'de Yahudi Fundamentalizmi"]}, {"yazar": "NURULLAH ÖZKILIÇ", "kitaplar": ["Gönül Yezgahı"]}, {"yazar": "OBJEKTİF YAYINLARI", "kitaplar": ["İran İslam Devrimi"]}, {"yazar": "OSMAN GÜNER", "kitaplar": ["Ebu Hüreyreye Yönelik Eleştriler"]}, {"yazar": "OSMAN ORAL", "kitaplar": ["İslam Mezhepleri Tarihi Ve Terimleri Sözlüğü"]}, {"yazar": "OSMAN ZEKİ EFEOĞLU", "kitaplar": ["Kızıl Ahtapotun Kolları"]}, {"yazar": "OSMAN ŞEKERCİ", "kitaplar": ["Fıkıh Mezheplerine Giriş"]}, {"yazar": "OZAN ARİF", "kitaplar": ["Bir Devrin Destanı"]}, {"yazar": "OZAN KEMAL SARIALİOĞLU", "kitaplar": ["Suriye Savaşının Gizlenen Gerçekleri"]}, {"yazar": "OĞUZ SAYGIN", "kitaplar": ["Hafıza Teknikleriyle Beyin Gücünü Geliştirmek"]}, {"yazar": "OĞUZ ÖZDEŞ", "kitaplar": ["Vatan Borcu"]}, {"yazar": "PAUL ARON", "kitaplar": ["Tarihin Büyük Sırları"]}, {"yazar": "PAUL TODD", "kitaplar": ["Küresel İstihbarat (Jonathan Bloch)"]}, {"yazar": "PETER HOUNAN", "kitaplar": ["Mossaddan Gelen Kadın"]}, {"yazar": "PETER LURİE _ V. J. HEVİZ", "kitaplar": ["Nostradamus ( 1991'den 2001'e Kehanetler.)"]}, {"yazar": "PETER MC HOLL", "kitaplar": ["Nostradamus"]}, {"yazar": "PETER THEROUX", "kitaplar": ["Kayıp İmam ( Musa Sadr)"]}, {"yazar": "PİERRE DEBRAY _ RİTZEN", "kitaplar": ["Freud Skolastiği"]}, {"yazar": "RAPHAEL PATAİ _ ERİCH BRAUER", "kitaplar": ["Kürdistanlı yahudiler"]}, {"yazar": "RAYİHA YAYINCILIK", "kitaplar": ["Kuranı Kerim", "Renkli", "Lühatı", "Ve İrab Klavuzu"]}, {"yazar": "RAİF CİLASUN", "kitaplar": ["Onlar Olmasaydı"]}, {"yazar": "RAİF KARADAĞ", "kitaplar": ["Petrol Fırtınası"]}, {"yazar": "RAŞİTD SAYILIR", "kitaplar": ["Rasulullah Ve Ehli Beyti"]}, {"yazar": "RECEP ÇETİNDAŞ", "kitaplar": ["Devlet", "Siyaset", "İbadet Üçgeninde Cuma Namazı"]}, {"yazar": "RESUL CAFERİYAN", "kitaplar": ["Masum İmamların Fikri Ve Siyasi  Hayatı"]}, {"yazar": "REŞİD RIZA", "kitaplar": ["Hilafet"]}, {"yazar": "RIZA ALİ UASİN", "kitaplar": ["İmam Hasan'ın (as) Barış Mesajı"]}, {"yazar": "RIZA HÜSEYİN NESEB", "kitaplar": ["Sünnete Uygun Secde"]}, {"yazar": "RIZA NERGİS", "kitaplar": ["Sabır Örneği Hz. Eyyüp (as)"]}, {"yazar": "RIZA SAVAŞ", "kitaplar": ["Raşid Halifeler Devrinde Kadın"]}, {"yazar": "ROBERT H. WİLLİAMS", "kitaplar": ["yahudi Ütopyasında Siyonistlerin Nihai Dünya Düzeni"]}, {"yazar": "ROBERT M. GATES", "kitaplar": ["İranın Zamanı Geldi. ( Zbigniew Brzeziński)"]}, {"yazar": "ROBİN WOODSWORTH CARLSEN", "kitaplar": ["İmam Ve Onun İslam Devrimi"]}, {"yazar": "ROGER GRAUDY", "kitaplar": ["Afarozdan Diyaloğa", "Çöküşün Öncüsü Abd", "İnsanlığın Medeniyet Destanı", "Siyonizm Dosyası", "İslamın Vaad Ettikleri", "20 yy. Biyografisi", "İslam İnsanlığın Geleceği", "Entegrizm", "Yaşayanlara Çağrı", "Amerikam Efsanesi 11 Eylül Komplosu"]}, {"yazar": "RUŞEN ÇAKIR", "kitaplar": ["Ne Şeriat Ne Demokrasi", "Nereye Gitti Bu Ülkücüler"]}, {"yazar": "RİCHART LEİGH", "kitaplar": ["Gizli Almanya"]}, {"yazar": "S. EBULHASAN BAKIRİ", "kitaplar": ["Ehli Sünnete Göre Ehli Beyt"]}, {"yazar": "SABRİ YAZAR", "kitaplar": ["İbrahim (as)"]}, {"yazar": "SADETTİN MERDİN", "kitaplar": ["Tanrıya Koşan Fizik"]}, {"yazar": "SADIK ALBAYRAK", "kitaplar": ["31 Mart Vakası Gerici Bir Hareket Mi?", "Meşrutiyet İslamcılığı Ve siyonizm", "Cumhuriyete Doğru Hilafetin Sonu", "Devrimler Ve Gerici Tepkiler", "Tek Parti Dönemi Ve Batıcılık", "Çağdaş Devrim Yobazları", "Yürüyenler Ve Sürünenler"]}, {"yazar": "SADIK CİHAN", "kitaplar": ["Uydurma Hadislerin Doğuşu Ve Sosyo-Politik Olaylara İlgisi"]}, {"yazar": "SAHİFEİ SECCADİYE", "kitaplar": ["İmam Zeynel Abidin'in (as) Duaları"]}, {"yazar": "SALİH EL -VERDAN", "kitaplar": ["Mısırda İslami Akımlar"]}, {"yazar": "SALİH GÜRDAL", "kitaplar": ["Din Nedir", "Tevhid Ve Şirk"]}, {"yazar": "SAYIN DALKIRAN", "kitaplar": ["Osmanlı Devletinde Ehli Sünnetin Şia Akidesine Tenkitleri"]}, {"yazar": "SAİD ALPSOY", "kitaplar": ["Tarih Kaderi İspat Eder"]}, {"yazar": "SAİD HAKİM", "kitaplar": ["Rabbani Yol Ve Sünnetullah"]}, {"yazar": "SAİD ÖZTÜRK", "kitaplar": ["Bilinmeyen Osmanlı"]}, {"yazar": "SAİDİ NURSİ", "kitaplar": ["Gençlik Rehberi", "Hanımlar Rehberi", "Lemalar"]}, {"yazar": "SAİT RAMAZAN EL- BUTİ", "kitaplar": ["Mezhepsizlik Bidattir", "Fıkhus Siyre"]}, {"yazar": "SEFA KAPLAN", "kitaplar": ["Tarih Terettüten İbarettir"]}, {"yazar": "SEFA SAYGILI", "kitaplar": ["Dünyayı Aldatanlar"]}, {"yazar": "SERKAN TEK8N", "kitaplar": ["Kuran'da Gizlenen Tarihler"]}, {"yazar": "SERVET ARMAĞAN (PROF.)", "kitaplar": ["Bugünkü Anayasa Düzeni"]}, {"yazar": "SEYMOUR M. HERSCH", "kitaplar": ["israil", "Amerika Ve Bomba"]}, {"yazar": "SEYYİD ABDUL HÜSEYİN ŞEREFULLAH", "kitaplar": ["El - Müracat"]}, {"yazar": "SEYYİD ABDURRAHMAN ER- RİFAİ", "kitaplar": ["yahudi Hakimiyeti"]}, {"yazar": "SEYYİD ALİ HAMANEY ( İMAM)", "kitaplar": ["İslam Düşüncesinin Kur'an'ı Temelleri", "Sorular Ve Fetvalar 1., 2. Cilt", "Ehli Beyt Fıkhında Oruç Ve Hükümleri", "Sabr", "Kur'an'da İslami Düşünce"]}, {"yazar": "SEYYİD ALİ HÜSEYİN", "kitaplar": ["İmam Cafer Sadık (as) Ve Fikri Akımlar"]}, {"yazar": "SEYYİD CAFER ŞEHİDİ", "kitaplar": ["Bir İslam Tarihi Tahlili"]}, {"yazar": "SEYYİD KUTUB", "kitaplar": ["İslam Toplumuna Doğru", "İstikbal İslamındır", "Kadın Ve Aile", "Bedir Ve Uhud", "İslami Hareket Metodu", "İslam'da Sosyal Adalet", "Tevhid Daveti", "İslam Kapitalizm Çatışması", "Yegane Dünya Nizamı İslam", "Faiz", "Filistin Davamız", "İslam Ve Emperyalizm", "İslam Düşüncesi (1,3. Cilt)", "Kuran'da Kıyamet Sahneleri", "Yoldaki İşaretler", "Yoldaki İşaretler 2", "Dünya Barışı Ve İslam", "yahudi İle Olan Savaşımız", "Son Sözler", "Seyyid Kutub Külliyatı 1.Cilt", "İşte İslam", "Bela Ve İmtihan", "İslami Etüdler", "Seyyid Kutunun Hayatı", "Fikri Ve Eserleri. ( Hikmet Yayınları )", "Seyyid Kutup Gözüyle Amerika", "İslam Düşüncesi 1.-3. Cilt", "Fi Zilal İl Kur'an (1.-16. Cilt.)", "Şehit ( Mutahhari İle )"]}, {"yazar": "SEYYİD MEHDİ ŞÜCAİ", "kitaplar": ["Hz. Fatma(as)'a Ağıt", "Kerbelada Peygamberin Atı"]}, {"yazar": "SEYYİD MESUD MASUMİ", "kitaplar": ["Evli Çiftler İçin İlmihal"]}, {"yazar": "SEYYİD MUHAMMED MUSAVİ", "kitaplar": ["Peşaver Geceleri"]}, {"yazar": "SEYYİD MURTAZA HÜSEYNİ", "kitaplar": ["Hz. Fatmanın Faziletleri", "Hadislerin Dilinden Fatıma"]}, {"yazar": "SEYYİD RAZİ", "kitaplar": ["Nehcül Belağa"]}, {"yazar": "SEYYİT AHMET ARVASİ", "kitaplar": ["Kendini Arayan İnsan"]}, {"yazar": "SONER YALÇIN", "kitaplar": ["Binbaşı Ersever'in İtirafları"]}, {"yazar": "SUYUTİ", "kitaplar": ["Cihat Hakkında 40 Ayet ve 40 Hadis", "Sünnetin İslamdaki Yeri"]}, {"yazar": "SÖNMEZ KUTLU", "kitaplar": ["İslam Düşüncesinde İlk Gelenekçiler"]}, {"yazar": "SÜLEYMAN ATEŞ", "kitaplar": ["Gerçek Sin Bu (1. Ve 2. Cilt)"]}, {"yazar": "SÜLEYMAN KOCABAŞ", "kitaplar": ["Türkiye Ve siyonizm", "Tarihimizde Yanlışlıklar Geçidi"]}, {"yazar": "SÜLEYMAN ÖZMEN", "kitaplar": ["israil Ve Etnik Dini Çatışmalar"]}, {"yazar": "SİSTANİ (AYETULLAH UZMA)", "kitaplar": ["Hacc Amelleri"]}, {"yazar": "T. ABDULKADİR HAMİD", "kitaplar": ["Mekke Döneminde Siyasi Düşünce Metodolojisi"]}, {"yazar": "TABATANAİ ( AYETULLAH)", "kitaplar": ["El - Mizan 2., 3., 4., 5., 6., 7., 8., ve 9.Cilt", "İslam'da Kur'an", "İslam Sosyolojisi", "İslam'da Şia", "İslam Ve Toplum"]}, {"yazar": "TABERİ ( EBU CAFER MUHAMMED B. CERİRÜT TABERİ )", "kitaplar": ["Tarihi Taberi 1., 2., 3., Ve 4. Cilt", "Taberi Tefsiri 1.", "- 9. Cilt"]}, {"yazar": "TAHA AKYOL", "kitaplar": ["Osmanlıda Ve İran'da Mezhep Ve Devlet", "Leninsiz Komunizm"]}, {"yazar": "TAŞKIN TUNA", "kitaplar": ["Uzayın Ötesi", "Uzayın Sırları", "Oku Ama Neyi?", "Ol Dedi Oldu 1. Ve 2. Cilt", "Bir Çarpı Bir Bütün Sayılarda Bir Vardır", "Son Basamak", "Muhammed'i Bilinç", "Şeytani Bilinç Muhammed'i Bilince Karşı", "Ölü Köpeğin Dişleri"]}, {"yazar": "TECEP ŞÜKRÜ APUHAN", "kitaplar": ["27 Mayıstan Yassıada Mahkemelerine Menderes"]}, {"yazar": "TEOMAN ŞAHİN", "kitaplar": ["Alevilere Söylenen Yalanlar ( Bektaşilik Soruşturması )"]}, {"yazar": "TEXE MARRS", "kitaplar": ["İllimünati"]}, {"yazar": "THEODOR HERZL", "kitaplar": ["Siyonizm Ve israilin Kurucusu Theodor Herzlin Hatıraları"]}, {"yazar": "THOMAS S. KUHN", "kitaplar": ["Bilimsel Devrimlerin Yapısı"]}, {"yazar": "TOPSTOY", "kitaplar": ["Hz. Muhammed"]}, {"yazar": "TUBA BASIN YAYIN", "kitaplar": ["Kerbela Ve İmam Hüseyin'in (as) Kıyamı Üzerine"]}, {"yazar": "TUNCAY ÖZKAN", "kitaplar": ["Entrikalar Savaşı ( Bush Ve Saddamın Gölgesinde )"]}, {"yazar": "TURAN DURSUN", "kitaplar": ["Kutsal Kitapların Kaynakları    2.Cilt"]}, {"yazar": "TURGUT TÜLÜMEN", "kitaplar": ["İran Devrimi Hatıraları"]}, {"yazar": "TWRCÜMAN GAZETESİNİN 1001 TEMEL ESERİ", "kitaplar": ["Sömürülen Topraklar", "Sömürülen Milletler"]}, {"yazar": "TÜRK DİL KURUMU", "kitaplar": ["Türkçe Sözlük 1.", "Ve 2. Cilt"]}, {"yazar": "TÜRKİYE DİYANET VAKFI", "kitaplar": ["Kur'an'ı Kerim Açıklamalı Meali"]}, {"yazar": "UFUK GÜLDEMİR", "kitaplar": ["Kanat Operasyonu"]}, {"yazar": "ULVİ ALACAKAPTAN", "kitaplar": ["Çaladaktilo", "Melodik Joplama", "Zehir Zemberek"]}, {"yazar": "UĞUR MUMCU", "kitaplar": ["Kürt Dosyası"]}, {"yazar": "VECİH KEVSERANİ", "kitaplar": ["Osmanlı Ve Safavilerde Din Devlet İlişkisi"]}, {"yazar": "VEHBİ VAKKASOĞLU", "kitaplar": ["Öğretmenin Not Defteri", "Dünyada İslam'a Koşanlar"]}, {"yazar": "VENDY BARNABY", "kitaplar": ["Virüs Saldırıyor"]}, {"yazar": "VEYİS ERSÖZ", "kitaplar": ["Sosyalizm", "Komunizm", "Faşizm Ve Şeriat Nedir"]}, {"yazar": "VİCTOR MARSDEN", "kitaplar": ["Siyon Liderlerinin Protokolleri"]}, {"yazar": "VİNCENT MONTEİL", "kitaplar": ["israilin Gizli Dosyası Terörizm"]}, {"yazar": "YAVUZ BAHADIROĞLU", "kitaplar": ["Mısıra Doğru", "Kırîm Kan Ağlıyor"]}, {"yazar": "YAŞAR KAPLAN", "kitaplar": ["Hz. Ali"]}, {"yazar": "YESEVİZADE", "kitaplar": ["Yahudilik Ve Dönmeler"]}, {"yazar": "YILMAZ DİKBAŞ", "kitaplar": ["İsrail'in Nükleer Silah Cephaneliği"]}, {"yazar": "YILMAZ POLAT", "kitaplar": ["Washington Entrikaları"]}, {"yazar": "YUSUF EL-KARDAVİ", "kitaplar": ["İslam'da Helal Ve Haram", "Alim Ve Tağut", "Tek Çare İslami Çözüm"]}, {"yazar": "YUSUF YAVASLI", "kitaplar": ["Dini Hikayeler"]}, {"yazar": "YÜMNİ SEZEN", "kitaplar": ["Dinler Arası Diyalog İhaneti"]}, {"yazar": "ZAFER DERGİSİ", "kitaplar": ["Gerçeğe Doğru (3., 5., 8., ve 19. Sayısı)", "Evolasyon"]}, {"yazar": "ZBİGNİEW BREZENSKY _ROBERT M. HATES", "kitaplar": ["İran'ın Zamanı Geldi"]}, {"yazar": "ZEHRA NEHREVERD", "kitaplar": ["Müslüman Kadının Hicap Mesajı", "Yusuf'un Hicretiyle Adım Adım"]}, {"yazar": "ZEYNEP GAZALİ", "kitaplar": ["Zindan Hatıraları", "Yeniden İslami Dirilişe"]}, {"yazar": "ZEYNEP KERMAN ( DOÇ. DR.)", "kitaplar": ["Rusların Asya'da Ve Rumelide Yaptıkları Mezalim.)"]}, {"yazar": "ZEYTİN REFREF", "kitaplar": ["İran'a Nasıl Bakmalı"]}, {"yazar": "ZİYAEDDİN EL KUDSİ", "kitaplar": ["İşte Tevhid 1.", "Ve 2. Cilt"]}, {"yazar": "ÖMER LÜTFİ METE", "kitaplar": ["Dünyayı Kimler Yönetiyor", "Derin Pkk (Mahir Kaynak İle)"]}, {"yazar": "ÖMER NASUHİ BİLMEN", "kitaplar": ["Büyük İslam İlmihali", "Ashabı Kiram Hakkında Müslümanların Nezih İtikatları"]}, {"yazar": "ÖMER TAŞLI", "kitaplar": ["Orta Doğuya Süper Güçlerin Etkileri"]}, {"yazar": "ÖMER ULUÇAY", "kitaplar": ["Hz. Ali"]}, {"yazar": "ÖMER ÖNGÜT", "kitaplar": ["Her İşim Bir Dindir"]}, {"yazar": "ÖMER ÖZKAYA", "kitaplar": ["CİA Belgeleriyle Zihin Kontrol Operasyonları"]}, {"yazar": "ÖZKER YAŞIN", "kitaplar": ["Kıbrısta Vuruşanlar"]}, {"yazar": "ÜNAL KILIÇ", "kitaplar": ["Yezid B. Muaviye"]}, {"yazar": "ÜNAL İNANÇ _ CAN POLAT", "kitaplar": ["Apo", "pkk Ve Saklanan Gerçekler"]}, {"yazar": "ÜSTÜN İNANÇ", "kitaplar": ["Yalnız Değilsiniz"]}, {"yazar": "İBRAHİM CANAN", "kitaplar": ["Peygamberimizin Yanılması Meselesi", "Namus Fitnesi Mut'a"]}, {"yazar": "İBRAHİM EMİNİ ( AYETULLAH )", "kitaplar": ["Hz. Fatıma (as)", "Adalet Güneşi", "Kur'an Ve Ehli Beyt Işığında Din Öğrenimi"]}, {"yazar": "İBRAHİM KARAGÜL", "kitaplar": ["Hesaplaşma Yüzyılı. ( Mezhepler Çatışması, Suikastler, Taktikler)"]}, {"yazar": "İBRAHİM KAYPAKKAYA", "kitaplar": ["Seçme Yazılar 2"]}, {"yazar": "İBRAHİM SARIÇAM", "kitaplar": ["Emevi - Haşimi İlişkileri İslam Öncesinden Abbasilere Kadar"]}, {"yazar": "İBRAHİM SARMIŞ ( DOÇ. DR.)", "kitaplar": ["Bir Düşünür Olarak Seyyid Kutup"]}, {"yazar": "İHSAN IŞIK", "kitaplar": ["Beduzzaman Saidi Nursi Ve Nurculuk"]}, {"yazar": "İHSAN SÜREYYA SIRMA", "kitaplar": ["Sömürü Ajanı İngiliz Misyonerleri", "Emeviler Dönemi", "Nasıl Sömürüldük", "İslam Ve Tarih", "2.Abdulhamidin İslam Birliği Siyaseti", "Mekke Dönemi Ve İşkence", "Medine Dönemi Ve Cihat"]}, {"yazar": "İMAM GAZALİ", "kitaplar": ["İhya-u Ulumid Din 4.Cilt", "Kimyayı Saadet", "Kıyamet Ve Ahiret"]}, {"yazar": "İMAM NESAİ", "kitaplar": ["Hadislerle Hz. Ali (as)"]}, {"yazar": "İMAMÜDDİN HALİL", "kitaplar": ["Sağ Sol Oyunu"]}, {"yazar": "İRFAN AYCAN", "kitaplar": ["İdeolojik Tarih Okumaları"]}, {"yazar": "İSA YÜCEER", "kitaplar": ["Cemalettin Efganinin Gerçek Yüzü"]}, {"yazar": "İSKENDER AKOT", "kitaplar": ["Hz. Ebu Fazlil Abbasın Hayatı Ve Faziletleri"]}, {"yazar": "İSLAMİ TEBLİĞ TEŞKİLATI", "kitaplar": ["İran İnkılap Ve Terörizm"]}, {"yazar": "İSMAİL ACARKAN _ BAHAETTİN SAĞLAM", "kitaplar": ["Turan Dursun Ve Din 1.2.3. Cilde Cevaplar)"]}, {"yazar": "İSMAİL BENDİDERYA", "kitaplar": ["Kerbelada Peygamberimizin Atı"]}, {"yazar": "İSMAİL FARUKİ", "kitaplar": ["İslam Ve Siyonizm", "İslam"]}, {"yazar": "İSMAİL HAMİ DANİŞMEND", "kitaplar": ["Türk Irkı Niçin Müslüman Oldu"]}, {"yazar": "İSMAİL KAYA", "kitaplar": ["İmamı Azam Fıkhı Ekber Şerhi"]}, {"yazar": "İSMAİL MUTLU", "kitaplar": ["Sünnet Bize Nasıl Ulaştı", "Caferilik"]}, {"yazar": "İSMAİL SAFA ÜSTÜN", "kitaplar": ["İran İslam Cumhuriyeti Yönetim Biçimi"]}, {"yazar": "İSMAİL YAHYA", "kitaplar": ["Çağlar Boyu Din Düşmanları"]}, {"yazar": "İSMET ÖZEL", "kitaplar": ["Cuma Mektupları 3"]}, {"yazar": "İSRAEL SHAHAK", "kitaplar": ["İsrail'de Yahudi Fundementalizmi", "İsrail'in Nükleer Sırları"]}, {"yazar": "ŞABAN KARATAŞ", "kitaplar": ["Şiada Ve Sünni Kaynaklarda Kur'an Tarihi"]}, {"yazar": "ŞABAN KUZGUN", "kitaplar": ["İslam Kaynaklarına Göre Hz. İbrahim(as) Ve Haniflik"]}, {"yazar": "ŞABAN PİRİŞ", "kitaplar": ["Kur'an'ı Kerim'in Türkçe Anlamı"]}, {"yazar": "ŞAHRUM AHAVİ", "kitaplar": ["İran'da Din Ve Siyaset"]}, {"yazar": "ŞERAFETTİN GÖLÇÜK", "kitaplar": ["Kelam Tarihi"]}, {"yazar": "ŞEREFÜTTİN SERİN", "kitaplar": ["Halife Ve Mezheplerin Getirdiği Değişiklikler", "Aleviler", "Nusayriler Ve Şiiler Kimlerdir"]}, {"yazar": "ŞERFÜTTİN (ALLAME)", "kitaplar": ["Kur'an Ve Hadisler Işığında Hz. Fatma(as)"]}, {"yazar": "ŞEYH ABBAS KUMMİ", "kitaplar": ["Mefatihu'l Cinan (Dua Kitabı)"]}, {"yazar": "ŞEYH SADUK İBNİ BABEVEYH", "kitaplar": ["İmam Rıza (as)'dan Hadis Pınarı"]}, {"yazar": "ŞİRALİ BAYAT", "kitaplar": ["Süreler Ve Ehli Beytten Dualar", "Şefaat Ve Evliyalara Tevessül"]}, {"yazar": "ŞİRAZİ (AYETULLAH)", "kitaplar": ["İnançlarımız", "Ehli Beyt Mektebinde Temel İnançlar"]}];
+
+let state = {
+  loading: true,
+  data: [],
+  search: "",
+  openAuthors: new Set(),
+  sheet: null, // {type: 'newAuthor'} or {type:'deleteAuthor', idx} etc
+  toastMsg: "",
+  toastTimer: null,
+};
+
+function trUpper(s){
+  return (s||"").toLocaleUpperCase('tr-TR');
+}
+
+async function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      state.data = JSON.parse(raw);
+    } else {
+      state.data = SEED_DATA;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+    }
+  } catch(e){
+    console.error("Storage init failed", e);
+    state.data = SEED_DATA;
+  }
+  state.loading = false;
+  render();
+}
+
+async function persist(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+  } catch(e){
+    console.error("Persist failed", e);
+    showToast("Kaydedilemedi, tekrar dene");
+  }
+}
+
+function showToast(msg){
+  state.toastMsg = msg;
+  render();
+  clearTimeout(state.toastTimer);
+  requestAnimationFrame(()=>{
+    const el = document.querySelector('.toast');
+    if(el) el.classList.add('show');
+  });
+  state.toastTimer = setTimeout(()=>{
+    const el = document.querySelector('.toast');
+    if(el) el.classList.remove('show');
+  }, 1800);
+}
+
+function totalBooks(){
+  return state.data.reduce((sum,a)=>sum+a.kitaplar.length,0);
+}
+
+function getFiltered(){
+  const q = state.search.trim();
+  if(!q) return state.data.map((a,i)=>({author:a, idx:i, matchedBooks:null}));
+  const qUp = trUpper(q);
+  const out = [];
+  state.data.forEach((a,i)=>{
+    const authorMatch = trUpper(a.yazar).includes(qUp);
+    const matchedBooks = a.kitaplar.filter(b=>trUpper(b).includes(qUp));
+    if(authorMatch || matchedBooks.length>0){
+      out.push({author:a, idx:i, matchedBooks: (authorMatch && matchedBooks.length===0) ? null : (state.search.trim()? a.kitaplar.filter(b=>trUpper(b).includes(qUp)||authorMatch) : null)});
+    }
+  });
+  return out;
+}
+
+function highlight(text, q){
+  if(!q) return escapeHtml(text);
+  const qUp = trUpper(q);
+  const upText = trUpper(text);
+  const idx = upText.indexOf(qUp);
+  if(idx===-1) return escapeHtml(text);
+  return escapeHtml(text.slice(0,idx)) + '<mark>' + escapeHtml(text.slice(idx, idx+q.length)) + '</mark>' + escapeHtml(text.slice(idx+q.length));
+}
+
+function escapeHtml(s){
+  return (s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function toggleAuthor(idx){
+  if(state.openAuthors.has(idx)) state.openAuthors.delete(idx);
+  else state.openAuthors.add(idx);
+  render();
+}
+
+function openNewAuthorSheet(){
+  state.sheet = {type:'newAuthor', yazar:'', kitap:''};
+  render();
+}
+
+function openDeleteAuthorConfirm(idx){
+  state.sheet = {type:'deleteAuthor', idx};
+  render();
+}
+
+function closeSheet(){
+  state.sheet = null;
+  render();
+}
+
+async function saveNewAuthor(){
+  const yazar = (document.getElementById('newAuthorName')?.value||'').trim();
+  const kitap = (document.getElementById('newAuthorBook')?.value||'').trim();
+  if(!yazar){ showToast("Yazar adı gerekli"); return; }
+  const exists = state.data.some(a => trUpper(a.yazar)===trUpper(yazar));
+  if(exists){ showToast("Bu yazar zaten listede"); return; }
+  state.data.push({yazar: yazar, kitaplar: kitap ? [kitap] : []});
+  state.data.sort((a,b)=> trUpper(a.yazar) < trUpper(b.yazar) ? -1 : 1);
+  await persist();
+  state.sheet = null;
+  showToast("Yazar eklendi");
+  render();
+}
+
+async function confirmDeleteAuthor(){
+  const idx = state.sheet.idx;
+  const name = state.data[idx].yazar;
+  state.data.splice(idx,1);
+  state.openAuthors.delete(idx);
+  await persist();
+  state.sheet = null;
+  showToast(name + " silindi");
+  render();
+}
+
+async function addBook(idx){
+  const input = document.getElementById('addBookInput-'+idx);
+  if(!input) return;
+  const val = input.value.trim();
+  if(!val) return;
+  state.data[idx].kitaplar.push(val);
+  await persist();
+  input.value = '';
+  render();
+  const again = document.getElementById('addBookInput-'+idx);
+  if(again) again.focus();
+}
+
+async function deleteBook(idx, bookIdx){
+  state.data[idx].kitaplar.splice(bookIdx,1);
+  await persist();
+  render();
+}
+
+function onSearchInput(val){
+  state.search = val;
+  render();
+}
+
+function renderSheet(){
+  if(!state.sheet) return '';
+  if(state.sheet.type === 'newAuthor'){
+    return `
+      <div class="sheet-backdrop" onclick="if(event.target===this) closeSheet()">
+        <div class="sheet">
+          <h2>Yeni yazar ekle</h2>
+          <label for="newAuthorName">Yazar adı</label>
+          <input id="newAuthorName" type="text" placeholder="Örn. AHMET ARSLAN" autocomplete="off" />
+          <label for="newAuthorBook">İlk kitap (opsiyonel)</label>
+          <input id="newAuthorBook" type="text" placeholder="Kitap adı" autocomplete="off" />
+          <div class="sheet-actions">
+            <button class="btn-cancel" onclick="closeSheet()">Vazgeç</button>
+            <button class="btn-save" onclick="saveNewAuthor()">Kaydet</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  if(state.sheet.type === 'deleteAuthor'){
+    const name = state.data[state.sheet.idx].yazar;
+    const count = state.data[state.sheet.idx].kitaplar.length;
+    return `
+      <div class="sheet-backdrop" onclick="if(event.target===this) closeSheet()">
+        <div class="sheet">
+          <h2>Yazarı sil</h2>
+          <p class="confirm-text"><b>${escapeHtml(name)}</b> ve kayıtlı ${count} kitabı tamamen silinecek. Bu işlem geri alınamaz.</p>
+          <div class="sheet-actions">
+            <button class="btn-cancel" onclick="closeSheet()">Vazgeç</button>
+            <button class="btn-save" style="background:var(--danger)" onclick="confirmDeleteAuthor()">Sil</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  return '';
+}
+
+function render(){
+  const root = document.getElementById('root');
+  if(state.loading){
+    root.innerHTML = `<div class="app"><div class="loading">Yükleniyor...</div></div>`;
+    return;
+  }
+
+  const filtered = getFiltered();
+  const q = state.search.trim();
+
+  let listHtml = '';
+  if(filtered.length===0){
+    listHtml = `<div class="empty">${q ? 'Sonuç bulunamadı.' : 'Henüz kayıt yok. Sağ alttaki + ile yazar ekleyebilirsin.'}</div>`;
+  } else {
+    listHtml = filtered.map(({author, idx, matchedBooks})=>{
+      const isOpen = state.openAuthors.has(idx) || (q && matchedBooks);
+      const booksToShow = isOpen ? author.kitaplar : [];
+      let booksHtml = '';
+      if(isOpen){
+        booksHtml = author.kitaplar.map((b, bi)=>{
+          return `
+            <div class="book-row">
+              <div class="book-title">${highlight(b, q)}</div>
+              <button class="book-del" title="Sil" onclick="deleteBook(${idx}, ${bi})">✕</button>
+            </div>
+          `;
+        }).join('');
+        booksHtml += `
+          <div class="add-book-row">
+            <input id="addBookInput-${idx}" type="text" placeholder="Yeni kitap adı" autocomplete="off" onkeydown="if(event.key==='Enter') addBook(${idx})" />
+            <button onclick="addBook(${idx})">Ekle</button>
+          </div>
+        `;
+      }
+      return `
+        <div class="author-row">
+          <div class="author-head" onclick="toggleAuthor(${idx})">
+            <svg class="chevron ${isOpen?'open':''}" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            <div class="author-info">
+              <div class="author-name">${highlight(author.yazar, q)}</div>
+              <div class="author-count">${author.kitaplar.length} kitap</div>
+            </div>
+            <button class="author-del" title="Yazarı sil" onclick="event.stopPropagation(); openDeleteAuthorConfirm(${idx})">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>
+            </button>
+          </div>
+          ${isOpen ? `<div class="books">${booksHtml}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  root.innerHTML = `
+    <div class="app">
+      <div class="head">
+        <h1>Kitap Arşivi</h1>
+        <div class="stats">${state.data.length} yazar &middot; ${totalBooks()} kitap</div>
+        <div class="search-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input id="searchInput" type="text" placeholder="Yazar veya kitap ara" value="${escapeHtml(state.search)}" oninput="onSearchInput(this.value)" autocomplete="off" />
+          ${state.search ? `<button class="clear-btn" onclick="onSearchInput('')">✕</button>` : ''}
+        </div>
+      </div>
+      <div class="list">${listHtml}</div>
+    </div>
+    <button class="fab" title="Yeni yazar ekle" onclick="openNewAuthorSheet()">+</button>
+    ${renderSheet()}
+    <div class="toast">${escapeHtml(state.toastMsg)}</div>
+  `;
+
+  // restore focus to search input caret position if it was focused
+  const activeIsSearch = document.activeElement && document.activeElement.id === 'searchInput';
+}
+
+loadData();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js').catch(e => console.error('SW kayıt hatası', e));
+  });
+}
+</script>
+
+</body>
+</html>
