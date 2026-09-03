@@ -10,6 +10,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="Kitap Arşivi" />
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <style>
@@ -355,29 +357,105 @@ function trUpper(s){
   return (s||"").toLocaleUpperCase('tr-TR');
 }
 
-async function loadData(){
+let db = null;
+let docRef = null;
+let applyingRemoteUpdate = false;
+let firestoreReady = false;
+
+function initFirestore(){
   try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw){
-      state.data = JSON.parse(raw);
+    const firebaseConfig = {
+      apiKey: "AIzaSyBL6PfLkPl9V2WecXBoxq2opfSonKW6928",
+      authDomain: "kitap-arsivi-6d990.firebaseapp.com",
+      projectId: "kitap-arsivi-6d990",
+      storageBucket: "kitap-arsivi-6d990.firebasestorage.app",
+      messagingSenderId: "461861232073",
+      appId: "1:461861232073:web:e5c344348025f352519c18"
+    };
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    docRef = db.collection("kitaparsivi").doc("data");
+    firestoreReady = true;
+  } catch(e){
+    console.error("Firebase init failed", e);
+    firestoreReady = false;
+  }
+}
+
+async function loadData(){
+  initFirestore();
+
+  if(!firestoreReady){
+    // fallback: local only, so the app still works offline/without firebase
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      state.data = raw ? JSON.parse(raw) : SEED_DATA;
+    } catch(e){
+      state.data = SEED_DATA;
+    }
+    state.loading = false;
+    render();
+    return;
+  }
+
+  try{
+    const snap = await docRef.get();
+    if(snap.exists && snap.data() && Array.isArray(snap.data().authors)){
+      state.data = snap.data().authors;
     } else {
       state.data = SEED_DATA;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+      await docRef.set({ authors: state.data, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
     }
   } catch(e){
-    console.error("Storage init failed", e);
-    state.data = SEED_DATA;
+    console.error("Firestore load failed, falling back to local copy", e);
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      state.data = raw ? JSON.parse(raw) : SEED_DATA;
+    } catch(e2){
+      state.data = SEED_DATA;
+    }
   }
+
   state.loading = false;
   render();
+
+  // keep a local backup copy so the app still opens if offline next time
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data)); } catch(e){}
+
+  // listen for live changes from other devices
+  if(firestoreReady){
+    docRef.onSnapshot((snap)=>{
+      if(!snap.exists) return;
+      const remoteAuthors = snap.data() && snap.data().authors;
+      if(!Array.isArray(remoteAuthors)) return;
+      if(applyingRemoteUpdate) return;
+      const localStr = JSON.stringify(state.data);
+      const remoteStr = JSON.stringify(remoteAuthors);
+      if(localStr === remoteStr) return;
+      state.data = remoteAuthors;
+      try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data)); } catch(e){}
+      render();
+    }, (err)=>{
+      console.error("Firestore listen error", err);
+    });
+  }
 }
 
 async function persist(){
+  // always keep a local backup so the app opens even without internet
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data)); } catch(e){}
+
+  if(!firestoreReady){
+    return;
+  }
   try{
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+    applyingRemoteUpdate = true;
+    await docRef.set({ authors: state.data, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
   } catch(e){
-    console.error("Persist failed", e);
-    showToast("Kaydedilemedi, tekrar dene");
+    console.error("Persist to Firestore failed", e);
+    showToast("Bağlantı sorunu, cihazda kaydedildi");
+  } finally {
+    applyingRemoteUpdate = false;
   }
 }
 
