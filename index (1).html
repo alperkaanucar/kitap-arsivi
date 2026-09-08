@@ -620,6 +620,13 @@ function render(){
     return;
   }
 
+  // remember which input was focused (and cursor position) before we redraw,
+  // so typing doesn't close the keyboard on mobile
+  const activeEl = document.activeElement;
+  const activeId = (activeEl && activeEl.id) ? activeEl.id : null;
+  const activeSelStart = (activeEl && typeof activeEl.selectionStart === 'number') ? activeEl.selectionStart : null;
+  const activeSelEnd = (activeEl && typeof activeEl.selectionEnd === 'number') ? activeEl.selectionEnd : null;
+
   const filtered = getFiltered();
   const q = state.search.trim();
 
@@ -683,8 +690,17 @@ function render(){
     <div class="toast">${escapeHtml(state.toastMsg)}</div>
   `;
 
-  // restore focus to search input caret position if it was focused
-  const activeIsSearch = document.activeElement && document.activeElement.id === 'searchInput';
+  // restore focus (and cursor position) to whatever input was active,
+  // so the keyboard stays open while typing
+  if(activeId){
+    const newActive = document.getElementById(activeId);
+    if(newActive){
+      newActive.focus();
+      if(activeSelStart !== null && typeof newActive.setSelectionRange === 'function'){
+        try{ newActive.setSelectionRange(activeSelStart, activeSelEnd); }catch(e){}
+      }
+    }
+  }
 }
 
 loadData();
